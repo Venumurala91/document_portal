@@ -17,25 +17,40 @@ from model.models import PromptType
 load_dotenv()
 
 class ConversationalRAG:
+    """
+    Conversational Retrieval-Augmented Generation (RAG) pipeline.
+
+        Contextualize Prompt -> rewrites user questions using chat history.
+        QA Prompt -> generates final answers using retrieved chunks.
+
+    """
     def __init__(self, session_id: str, retriever):
         self.log = CustomLogger().get_logger(__name__)
         self.session_id = session_id
         self.retriever = retriever
 
         try:
-            self.llm = self._load_llm()
-            self.contextualize_prompt = PROMPT_REGISTRY[PromptType.CONTEXTUALIZE_QUESTION.value]
-            self.qa_prompt = PROMPT_REGISTRY[PromptType.CONTEXT_QA.value]
+            self.llm = self._load_llm() # Loads LLM 
+            self.contextualize_prompt = PROMPT_REGISTRY[PromptType.CONTEXTUALIZE_QUESTION.value]  # Rewrites the user Question 
+        
+            self.qa_prompt = PROMPT_REGISTRY[PromptType.CONTEXT_QA.value] #Takes the rewritten question + retrieved document chunks and asks the LLM to generate a final answer.
 
+            # It tell us past chat history
             self.history_aware_retriever = create_history_aware_retriever(
                 self.llm, self.retriever, self.contextualize_prompt
             )
+
             self.log.info("Created history-aware retriever", session_id=session_id)
 
+            # Create QA chain (LLM + QA prompt)
             self.qa_chain = create_stuff_documents_chain(self.llm, self.qa_prompt)
+
+            # Combine retriever + QA chain into a Retrieval-Augmented Generation pipeline
             self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.qa_chain)
+            
             self.log.info("Created RAG chain", session_id=session_id)
 
+            # RAG chain with session history tracking
             self.chain = RunnableWithMessageHistory(
                 self.rag_chain,
                 self._get_session_history,

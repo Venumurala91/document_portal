@@ -10,7 +10,7 @@ class DocumentPortalException(Exception):
             norm_msg = str(error_message)
         else:
             norm_msg = str(error_message)
-
+    
         # Resolve exc_info (supports: sys module, Exception object, or current context)
         exc_type = exc_value = exc_tb = None
         if error_details is None:

@@ -30,7 +30,7 @@ class DocumentComparatorLLM:
 
             self.log.info("Invoking document comparison LLM chain")
             response = self.chain.invoke(inputs)
-            self.log.info("Chain invoked successfully", response_preview=str(response)[:200])
+            self.log.info("Chain invoked successfully", response_preview=str(response)[:2000])
             return self._format_response(response)
         except Exception as e:
             self.log.error("Error in compare_documents", error=str(e))

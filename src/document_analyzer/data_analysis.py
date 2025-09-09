@@ -22,6 +22,10 @@ class DocumentAnalyzer:
             self.llm=self.loader.load_llm()
             
             # Prepare parsers
+            # def __str__(self):
+            #     return f"ModelLoader: {self.loader}, Config: {self.llm}"  # Venu written code 
+            
+
             self.parser = JsonOutputParser(pydantic_object=Metadata)
             self.fixing_parser = OutputFixingParser.from_llm(parser=self.parser, llm=self.llm)
             
@@ -36,7 +40,11 @@ class DocumentAnalyzer:
             raise DocumentPortalException("Error in DocumentAnalyzer initialization", sys)
         
         
-    
+    def __str__(self):
+        
+        return f"ModelLoader: {self.loader}, Config: {self.llm}"
+
+
     def analyze_document(self, document_text:str)-> dict:
         """
         Analyze a document's text and extract structured metadata & summary.
