@@ -24,7 +24,7 @@ class CustomLogger:
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(logging.Formatter("%(message)s"))
-    
+
         logging.basicConfig(
             level=logging.INFO,
             format="%(message)s",  # Structlog will handle JSON rendering
@@ -46,8 +46,8 @@ class CustomLogger:
         return structlog.get_logger(logger_name)
 
 
-# --- Usage Example ---
-if __name__ == "__main__":
-    logger = CustomLogger().get_logger(__file__)
-    logger.info("User uploaded a file", user_id=123, filename="report.pdf")
-    logger.error("Failed to process PDF", error="File not found", user_id=123)
+# # --- Usage Example ---
+# if __name__ == "__main__":
+#     logger = CustomLogger().get_logger(__file__)
+#     logger.info("User uploaded a file", user_id=123, filename="report.pdf")
+#     logger.error("Failed to process PDF", error="File not found", user_id=123)
