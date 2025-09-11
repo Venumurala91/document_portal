@@ -43,6 +43,7 @@ async def serve_ui(request: Request):
     resp.headers["Cache-Control"] = "no-store"
     return resp
 
+# To check health
 @app.get("/health")
 def health() -> Dict[str, str]:
     log.info("Health check passed.")
