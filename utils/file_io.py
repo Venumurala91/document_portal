@@ -42,6 +42,7 @@ def save_uploaded_files(uploaded_files: Iterable, target_dir: Path) -> List[Path
             saved.append(out)
             log.info("File saved for ingestion", uploaded=name, saved_as=str(out))
         return saved
+    #exception 
     except Exception as e:
         log.error("Failed to save uploaded files", error=str(e), dir=str(target_dir))
         raise DocumentPortalException("Failed to save uploaded files", e) from e
