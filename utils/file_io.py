@@ -6,9 +6,9 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import uuid
 from typing import Iterable, List
-from logger.custom_logger import CustomLogger
+from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import DocumentPortalException
-log = CustomLogger().get_logger(__name__)
+
 SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt"}
 
 # ----------------------------- #
@@ -42,7 +42,6 @@ def save_uploaded_files(uploaded_files: Iterable, target_dir: Path) -> List[Path
             saved.append(out)
             log.info("File saved for ingestion", uploaded=name, saved_as=str(out))
         return saved
-    #exception 
     except Exception as e:
         log.error("Failed to save uploaded files", error=str(e), dir=str(target_dir))
         raise DocumentPortalException("Failed to save uploaded files", e) from e

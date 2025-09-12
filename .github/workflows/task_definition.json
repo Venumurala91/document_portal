@@ -22,21 +22,14 @@
       ],
       "environment": [
         {
-          "name": "LANGCHAIN_PROJECT",
-          "value": "DOCUMENT PORTAL"
+          "name": "ENV",
+          "value": "production"
         }
       ],
       "secrets": [
         {
-          "name": "GROQ_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:694509210613:secret:api_keys-kXiOKo"
-          
-          
-        },
-        
-        {
-          "name": "GOOGLE_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:694509210613:secret:api_keys-kXiOKo"
+          "name": "API_KEYS",
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:459497895986:secret:api_keys-nZTtj8"
         }
         
       ],
@@ -46,8 +39,7 @@
           "awslogs-group": "/ecs/documentportaltd",
           "awslogs-region": "ap-southeast-2",
           "awslogs-stream-prefix": "ecs",
-          "mode": "non-blocking",
-          "max-buffer-size": "25m"
+          "awslogs-create-group": "true"
         }
       }
     }
