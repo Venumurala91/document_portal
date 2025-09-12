@@ -53,6 +53,8 @@ class FastAPIFileAdapter:
         self._uf.file.seek(0)
         return self._uf.file.read()
 
+
+# READING PDF 
 def read_pdf_via_handler(handler, path: str) -> str:
     if hasattr(handler, "read_pdf"):
         return handler.read_pdf(path)  # type: ignore
