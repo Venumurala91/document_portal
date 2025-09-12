@@ -28,8 +28,9 @@
       ],
       "secrets": [
         {
-          "name": "API_KEYS",
-          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:459497895986:secret:api_keys-nZTtj8"
+          "name": "API_KEYS_LIVE_PROJECT",
+          "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:694509210613:secret:api_keys_live_project-QGEuIG"
+          
         }
         
       ],
