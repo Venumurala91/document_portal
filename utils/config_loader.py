@@ -31,5 +31,7 @@ def load_config(config_path: str | None = None) -> dict:
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
 
+
+    #contect manager
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
