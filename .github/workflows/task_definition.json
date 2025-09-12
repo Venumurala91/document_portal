@@ -28,7 +28,7 @@
       ],
       "secrets": [
         {
-          "name": "API_KEYS",
+          "name": "API_KEYS_LIVE_PROJECT",
           "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:694509210613:secret:api_keys_live_project-QGEuIG"
           
         }
