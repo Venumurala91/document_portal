@@ -13,6 +13,7 @@ class CustomLogger:
         log_file = f"{datetime.now().strftime('%m_%d_%Y_%H_%M_%S')}.log"
         self.log_file_path = os.path.join(self.logs_dir, log_file)
 
+    # to store logs
     def get_logger(self, name=__file__):
         logger_name = os.path.basename(name)
 
