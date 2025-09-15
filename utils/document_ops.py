@@ -44,6 +44,7 @@ def concat_for_comparison(ref_docs: List[Document], act_docs: List[Document]) ->
     return f"<<REFERENCE_DOCUMENTS>>\n{left}\n\n<<ACTUAL_DOCUMENTS>>\n{right}"
 
 # ---------- Helpers ----------
+#
 class FastAPIFileAdapter:
     """Adapt FastAPI UploadFile -> .name + .getbuffer() API"""
     def __init__(self, uf: UploadFile):
