@@ -28,7 +28,7 @@
       ],
       "secrets": [
         {
-          "name": "API_KEYS_DEPLOY",
+          "name": "api_keys_deploy",
           "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:694509210613:secret:api_keys_deploy-N1EKpj"
           
         }
