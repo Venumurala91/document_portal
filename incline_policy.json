@@ -23,7 +23,7 @@
 			"Sid": "Statement1",
 			"Effect": "Allow",
 			"Action": "secretsmanager:GetSecretValue",
-			"Resource": "arn:aws:secretsmanager:ap-southeast-2:694509210613:secret:api_keys_live-2GXF5D*"
+			"Resource": "arn:aws:secretsmanager:ap-southeast-2:694509210613:secret:api_keys_live-2GXF5D"
 			
 		}
 	]
