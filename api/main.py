@@ -15,7 +15,7 @@ from src.document_ingestion.data_ingestion import (
 from src.document_analyzer.data_analysis import DocumentAnalyzer
 from src.document_compare.document_comparator import DocumentComparatorLLM
 from src.document_chat.retrieval import ConversationalRAG
-from utils.document_ops import FastAPIFileAdapter,read_pdf_via_handler
+from utils.document_ops import FastAPIFileAdapter,read_file_via_handler
 from logger import GLOBAL_LOGGER as log
 
 FAISS_BASE = os.getenv("FAISS_BASE", "faiss_index")
@@ -53,9 +53,14 @@ def health() -> Dict[str, str]:
 async def analyze_document(file: UploadFile = File(...)) -> Any:
     try:
         log.info(f"Received file for analysis: {file.filename}")
+
+        # A new session directory is created, a unique session ID is generated, and logging information is recorded.
         dh = DocHandler()
+
+        # FastAPIFileAdapter this function will give file name and convert entire content to bytes and saves 
         saved_path = dh.save_pdf(FastAPIFileAdapter(file))
-        text = read_pdf_via_handler(dh, saved_path)
+
+        text = read_file_via_handler(dh, saved_path)
         analyzer = DocumentAnalyzer()
         result = analyzer.analyze_document(text)
         log.info("Document analysis complete.")
@@ -71,10 +76,15 @@ async def analyze_document(file: UploadFile = File(...)) -> Any:
 async def compare_documents(reference: UploadFile = File(...), actual: UploadFile = File(...)) -> Any:
     try:
         log.info(f"Comparing files: {reference.filename} vs {actual.filename}")
+        # This records base directory with session_id and path 
         dc = DocumentComparator()
+
+        # Takes file name and saves the uploaded reference and actual PDF files into the session folder
         ref_path, act_path = dc.save_uploaded_files(
             FastAPIFileAdapter(reference), FastAPIFileAdapter(actual)
         )
+
+        # It could take both values as a tuple ex:a=10,b=20 then _=(10,20)
         _ = ref_path, act_path
         combined_text = dc.combine_documents()
         comp = DocumentComparatorLLM()
@@ -155,9 +165,9 @@ async def chat_query(
         log.exception("Chat query failed")
         raise HTTPException(status_code=500, detail=f"Query failed: {e}")
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run("api.main:app", host="127.0.0.1", port=8000, reload=True)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("api.main:app", host="127.0.0.1", port=8000, reload=True)
 
 # command for executing the fast api
 # uvicorn api.main:app --port 8080 --reload    

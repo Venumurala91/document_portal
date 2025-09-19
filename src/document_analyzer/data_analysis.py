@@ -18,8 +18,12 @@ class DocumentAnalyzer:
             self.loader=ModelLoader()
             self.llm=self.loader.load_llm()
             
-            # Prepare parsers
+            # Prepare parsers take raw LLM output (text) and convert it into structured JSON
             self.parser = JsonOutputParser(pydantic_object=Metadata)
+
+            # - First, tries to parse using the strict schema (JsonOutputParser)
+            # - If parsing fails (invalid JSON, wrong types, missing fields),
+            #   the LLM itself is used to "fix" the output so it matches the schema
             self.fixing_parser = OutputFixingParser.from_llm(parser=self.parser, llm=self.llm)
             
             self.prompt = PROMPT_REGISTRY["document_analysis"]

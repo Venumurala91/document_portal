@@ -18,7 +18,9 @@ class ApiKeyManager:
 
         if raw:
             try:
+                #json.loads() is the bridge that turns an environment variable string into a usable Python dictionary.
                 parsed = json.loads(raw)
+                
                 if not isinstance(parsed, dict):
                     raise ValueError("API_KEYS is not a valid JSON object")
                 self.api_keys = parsed
@@ -53,6 +55,7 @@ class ApiKeyManager:
 class ModelLoader:
     """
     Loads embedding models and LLMs based on config and environment.
+
     """
 
     def __init__(self):

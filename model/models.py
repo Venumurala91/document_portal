@@ -20,7 +20,7 @@ class SummaryResponse(RootModel[list[ChangeFormat]]):
     pass
 
 
-# promt
+# Using ENUM it will tell if we can pass any wrong values it shows enumeration error to fix this properly 
 class PromptType(str, Enum):
     DOCUMENT_ANALYSIS = "document_analysis"
     DOCUMENT_COMPARISON = "document_comparison"

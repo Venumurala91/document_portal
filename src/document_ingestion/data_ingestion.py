@@ -5,6 +5,11 @@ import json
 import uuid
 import hashlib
 import shutil
+import io
+from fastapi import UploadFile
+import docx                        #for document
+from pptx import Presentation      # For ppt 
+import pandas as pd                # for excel 
 from pathlib import Path
 from typing import Iterable, List, Optional, Dict, Any
 import fitz  # PyMuPDF
@@ -17,7 +22,7 @@ from exception.custom_exception import DocumentPortalException
 from utils.file_io import generate_session_id, save_uploaded_files
 from utils.document_ops import load_documents, concat_for_analysis, concat_for_comparison
 
-SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt"}
+SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt",".md", ".pptx", ".xlsx", ".csv"}
 
 # FAISS Manager (load-or-create)
 class FaissManager:
@@ -142,7 +147,15 @@ class ChatIngestor:
         chunk_overlap: int = 200,
         k: int = 5,):
         try:
-            paths = save_uploaded_files(uploaded_files, self.temp_dir)
+            converted_files = []
+            for f in uploaded_files:
+                if isinstance(f, dict) and "filename" in f and "content" in f:
+                    converted_files.append(
+                        UploadFile(filename=f["filename"], file=io.BytesIO(f["content"]))
+                    )
+                else:
+                    converted_files.append(f)
+            paths = save_uploaded_files(converted_files, self.temp_dir)
             docs = load_documents(paths)
             if not docs:
                 raise ValueError("No valid documents loaded")
@@ -174,31 +187,52 @@ class ChatIngestor:
             
 class DocHandler:
     """
-    PDF save + read (page-wise) for analysis.
+    Checks path , generates session ID and makes one directory with session id and stores this to logs 
+    
     """
     def __init__(self, data_dir: Optional[str] = None, session_id: Optional[str] = None):
+        # First it will check env data path or it takes current directory 
         self.data_dir = data_dir or os.getenv("DATA_STORAGE_PATH", os.path.join(os.getcwd(), "data", "document_analysis"))
+        #stores a unique session ID
         self.session_id = session_id or generate_session_id("session")
+        #It join directory with unique session id 
         self.session_path = os.path.join(self.data_dir, self.session_id)
+
         os.makedirs(self.session_path, exist_ok=True)
+
         log.info("DocHandler initialized", session_id=self.session_id, session_path=self.session_path)
 
+        # Initialize DocHandler for multi-format reading
+        
     def save_pdf(self, uploaded_file) -> str:
         try:
+            # returns file name  "Ex: "C:/Users/User/Downloads/test.pdf"--># returns "document.pdf"text.pdf "
             filename = os.path.basename(uploaded_file.name)
-            if not filename.lower().endswith(".pdf"):
-                raise ValueError("Invalid file type. Only PDFs are allowed.")
+
+            # checks file is pdf or not  
+            # if not filename.lower().endswith(".pdf"):
+                # raise ValueError("Invalid file type. Only PDFs are allowed.")
+            if not filename.lower().endswith(tuple(SUPPORTED_EXTENSIONS)):
+                raise ValueError(f"Invalid file type. Only {SUPPORTED_EXTENSIONS} are allowed.")
+                
+            
+            # saves path with session and file name 
             save_path = os.path.join(self.session_path, filename)
+            # Open the file in binary write mode ("wb") to save its exact bytes
             with open(save_path, "wb") as f:
                 if hasattr(uploaded_file, "read"):
+                    # Write file content as bytes
                     f.write(uploaded_file.read())
                 else:
                     f.write(uploaded_file.getbuffer())
-            log.info("PDF saved successfully", file=filename, save_path=save_path, session_id=self.session_id)
+
+            log.info("File saved successfully", file=filename, save_path=save_path, session_id=self.session_id)
+            # log.info("PDF saved successfully", file=filename, save_path=save_path, session_id=self.session_id)
+
             return save_path
         except Exception as e:
-            log.error("Failed to save PDF", error=str(e), session_id=self.session_id)
-            raise DocumentPortalException(f"Failed to save PDF: {str(e)}", e) from e
+            log.error("Failed to save file", error=str(e), session_id=self.session_id)
+            raise DocumentPortalException(f"Failed to save file: {str(e)}", e) from e
 
     def read_pdf(self, pdf_path: str) -> str:
         try:
@@ -213,6 +247,35 @@ class DocHandler:
         except Exception as e:
             log.error("Failed to read PDF", error=str(e), pdf_path=pdf_path, session_id=self.session_id)
             raise DocumentPortalException(f"Could not process PDF: {pdf_path}", e) from e
+
+    def read_file(self, file_path: str) -> str:
+        try:
+            ext = Path(file_path).suffix.lower()
+
+            if ext == ".pdf":
+                return self.read_pdf(file_path)
+            elif ext == ".docx":
+                doc = docx.Document(file_path)
+                return "\n".join([p.text for p in doc.paragraphs])
+            elif ext in [".txt", ".md"]:
+                return Path(file_path).read_text(encoding="utf-8")
+            elif ext == ".pptx":
+                prs = Presentation(file_path)
+                text = []
+                for slide in prs.slides:
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text") and shape.text.strip():
+                            text.append(shape.text)
+                return "\n".join(text)
+            elif ext in [".csv", ".xlsx"]:
+                df = pd.read_excel(file_path) if ext == ".xlsx" else pd.read_csv(file_path)
+                return df.to_csv(index=False)
+            else:
+                raise ValueError(f"Unsupported file type: {ext}")
+
+        except Exception as e:
+            log.error("Failed to read file", file=file_path, error=str(e), session_id=self.session_id)
+            raise DocumentPortalException(f"Failed to read file: {file_path}", e) from e
 class DocumentComparator:
     """
     Save, read & combine PDFs for comparison with session-based versioning.
@@ -223,24 +286,52 @@ class DocumentComparator:
         self.session_path = self.base_dir / self.session_id
         self.session_path.mkdir(parents=True, exist_ok=True)
         log.info("DocumentComparator initialized", session_path=str(self.session_path))
+        
+        self.doc_handler = DocHandler(data_dir=str(self.session_path), session_id=self.session_id)
+
 
     def save_uploaded_files(self, reference_file, actual_file):
+        """
+        In short: This function saves the uploaded reference and actual PDF files into the session folder,
+        ensures they’re PDFs, and returns their saved paths.
+
+        """
         try:
+            # Build paths for saving inside the session folder
             ref_path = self.session_path / reference_file.name
             act_path = self.session_path / actual_file.name
+
+            # Iterate over both files (reference and actual)
+            # for fobj, out in ((reference_file, ref_path), (actual_file, act_path)):
+
+            #     # Check file extension
+            #     if not fobj.name.lower().endswith(".pdf"):
+            #         raise ValueError("Only PDF files are allowed.")
             for fobj, out in ((reference_file, ref_path), (actual_file, act_path)):
-                if not fobj.name.lower().endswith(".pdf"):
-                    raise ValueError("Only PDF files are allowed.")
+                if not fobj.name.lower().endswith(tuple(SUPPORTED_EXTENSIONS)):
+                    raise ValueError(f"Only {SUPPORTED_EXTENSIONS} files are allowed.")
+
+
+                # Save file to disk in binary mode
                 with open(out, "wb") as f:
-                    if hasattr(fobj, "read"):
+                    if hasattr(fobj, "read"):          # If it's a FastAPI UploadFile-like object
                         f.write(fobj.read())
-                    else:
+                    else:                              # If it's a file-like object with buffer
                         f.write(fobj.getbuffer())
+
+            # Log success
             log.info("Files saved", reference=str(ref_path), actual=str(act_path), session=self.session_id)
+
+            # Return the saved file paths
             return ref_path, act_path
+
         except Exception as e:
-            log.error("Error saving PDF files", error=str(e), session=self.session_id)
+            # Log and raise custom exception if something goes wrong
+            # log.error("Error saving PDF files", error=str(e), session=self.session_id)
+            # raise DocumentPortalException("Error saving files", e) from e
+            log.error("Error saving files", error=str(e), session=self.session_id)
             raise DocumentPortalException("Error saving files", e) from e
+        
 
     def read_pdf(self, pdf_path: Path) -> str:
         try:
@@ -262,10 +353,16 @@ class DocumentComparator:
     def combine_documents(self) -> str:
         try:
             doc_parts = []
+            # for file in sorted(self.session_path.iterdir()):
+            #     if file.is_file() and file.suffix.lower() == ".pdf":
+            #         content = self.read_pdf(file)
+            #         doc_parts.append(f"Document: {file.name}\n{content}")
+
             for file in sorted(self.session_path.iterdir()):
-                if file.is_file() and file.suffix.lower() == ".pdf":
-                    content = self.read_pdf(file)
+                if file.is_file() and file.suffix.lower() in SUPPORTED_EXTENSIONS:
+                    content = self.doc_handler.read_file(str(file))
                     doc_parts.append(f"Document: {file.name}\n{content}")
+
             combined_text = "\n\n".join(doc_parts)
             log.info("Documents combined", count=len(doc_parts), session=self.session_id)
             return combined_text

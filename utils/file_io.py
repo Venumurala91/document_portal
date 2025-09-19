@@ -9,13 +9,17 @@ from typing import Iterable, List
 from logger import GLOBAL_LOGGER as log
 from exception.custom_exception import DocumentPortalException
 
-SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt"}
+SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".pptx", ".csv", ".xlsx", ".md"}
 
 # ----------------------------- #
 # Helpers (file I/O + loading)  #
 # ----------------------------- #
 def generate_session_id(prefix: str = "session") -> str:
+    # Set timezone to Indian Standard Time (IST)
     ist = ZoneInfo("Asia/Kolkata")
+    
+    # Get current datetime in IST and format it as YYYYMMDD_HHMMSS and 
+    # Generate a random UUID4, convert to hex string, take first 8 characters for uniqueness
     return f"{prefix}_{datetime.now(ist).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
 def save_uploaded_files(uploaded_files: Iterable, target_dir: Path) -> List[Path]:
