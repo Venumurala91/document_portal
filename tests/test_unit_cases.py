@@ -38,7 +38,7 @@ def test_document_analyzer_init_success(monkeypatch):
     assert analyzer.fixing_parser == "FIX_PARSER"
     assert isinstance(analyzer.prompt, ChatPromptTemplate)
 
-
+# comment
 def test_document_analyzer_init_llm_failure_wrapped(monkeypatch):
     # Make the internal ModelLoader return a loader whose load_llm() fails
     class FakeLoader:
